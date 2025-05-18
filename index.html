@@ -2,28 +2,40 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Куб по траве с джойстиком</title>
+  <title>Куб по траве</title>
+  <!-- Поддержка мобильных устройств -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <style>
-    body {
+    /* Обнуление */
+    * {
       margin: 0;
-      background-color: #4caf50;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
       overflow: hidden;
+      background-color: #4CAF50;
       font-family: sans-serif;
     }
 
     canvas {
       display: block;
-      margin: 0 auto;
       background-color: #6aae6d;
       border: 2px solid #2e7d32;
+      width: 100vw;
+      height: 100vh;
     }
 
     #joystickArea {
       position: absolute;
-      bottom: 40px;
-      left: 40px;
+      bottom: 30px;
+      left: 30px;
       width: 150px;
       height: 150px;
+      touch-action: none; /* Отключаем стандартные жесты */
     }
 
     .joystick-base,
@@ -33,9 +45,9 @@
     }
 
     .joystick-base {
-      width: 150px;
-      height: 150px;
-      background-color: rgba(0, 0, 0, 0.2);
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.1);
     }
 
     .joystick-thumb {
@@ -49,18 +61,19 @@
 
     #message {
       position: absolute;
-      top: 10px;
+      top: 20px;
       width: 100%;
       text-align: center;
-      font-size: 24px;
+      font-size: 20px;
       color: white;
       text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <div id="message"></div>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <canvas id="gameCanvas"></canvas>
 
   <!-- Джойстик -->
   <div id="joystickArea">
@@ -74,7 +87,19 @@
     const messageEl = document.getElementById("message");
     const thumb = document.getElementById("joystickThumb");
 
-    // Параметры игрока
+    // Размеры экрана
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      target.x = canvas.width / 2 - target.size / 2;
+      target.y = canvas.height / 2 - target.size / 2;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Игрок
     let player = {
       x: 100,
       y: 100,
@@ -83,7 +108,7 @@
       speed: 4
     };
 
-    // Целевой куб
+    // Цель
     let target = {
       x: canvas.width / 2 - 50,
       y: canvas.height / 2 - 50,
@@ -93,14 +118,14 @@
 
     // Джойстик
     const joystick = {
-      base: { x: 115, y: 115 }, // центр джойстика (половина 150)
+      base: { x: 115, y: 115 },
       maxRadius: 50,
       currentX: 0,
       currentY: 0,
       moving: false
     };
 
-    // Функция для перевода координат джойстика в направление
+    // Получение направления
     function getDirectionFromJoystick() {
       return {
         x: joystick.currentX / joystick.maxRadius,
@@ -127,10 +152,11 @@
       thumb.style.top = 45 + joystick.currentY + "px";
     }
 
-    // События мыши
+    // Мышь
     joystickArea.addEventListener("mousedown", (e) => {
       joystick.moving = true;
-      moveJoystick(e.offsetX, e.offsetY);
+      const rect = joystickArea.getBoundingClientRect();
+      moveJoystick(e.clientX - rect.left, e.clientY - rect.top);
     });
 
     document.addEventListener("mousemove", (e) => {
@@ -148,7 +174,7 @@
       thumb.style.top = "45px";
     });
 
-    // События тача
+    // Тач
     joystickArea.addEventListener("touchstart", (e) => {
       e.preventDefault();
       const touch = e.touches[0];
@@ -178,7 +204,7 @@
       player.x += dir.x * player.speed;
       player.y += dir.y * player.speed;
 
-      // Ограничение движения по краям канваса
+      // Ограничение движения
       player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
     }
@@ -202,7 +228,7 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Травяной фон
+      // Фон
       ctx.fillStyle = "#6aae6d";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
