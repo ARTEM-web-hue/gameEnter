@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>Куб по траве с джойстиком</title>
-  <!-- Поддержка мобильных устройств -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <style>
     body {
       margin: 0;
@@ -15,18 +13,17 @@
 
     canvas {
       display: block;
-      width: 100vw;
-      height: 100vh;
+      margin: 0 auto;
       background-color: #6aae6d;
       border: 2px solid #2e7d32;
     }
 
     #joystickArea {
       position: absolute;
-      bottom: 30px;
-      left: 30px;
-      width: 120px; /* Уменьшили */
-      height: 120px;
+      bottom: 40px;
+      left: 40px;
+      width: 150px;
+      height: 150px;
     }
 
     .joystick-base,
@@ -36,17 +33,17 @@
     }
 
     .joystick-base {
-      width: 100%;
-      height: 100%;
+      width: 150px;
+      height: 150px;
       background-color: rgba(0, 0, 0, 0.2);
     }
 
     .joystick-thumb {
-      width: 40px; /* Меньше палец */
-      height: 40px;
+      width: 60px;
+      height: 60px;
       background-color: #ffcc00;
-      top: 40px;
-      left: 40px;
+      top: 45px;
+      left: 45px;
       box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
 
@@ -55,15 +52,15 @@
       top: 10px;
       width: 100%;
       text-align: center;
-      font-size: 18px; /* Поменьше текст */
-      color: rgb(32, 186, 217);
+      font-size: 24px;
+      color: white;
       text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     }
   </style>
 </head>
 <body>
   <div id="message"></div>
-  <canvas id="gameCanvas"></canvas>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
   <!-- Джойстик -->
   <div id="joystickArea">
@@ -77,43 +74,37 @@
     const messageEl = document.getElementById("message");
     const thumb = document.getElementById("joystickThumb");
 
-    // Подстройка размера канваса под экран
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-
-      target.x = canvas.width / 2 - target.size / 2;
-      target.y = canvas.height / 2 - target.size / 2;
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    // Игрок
+    // Параметры игрока
     let player = {
       x: 100,
       y: 100,
       size: 50,
-      color: "rgb(32, 186, 217)",
+      color: "#ffffff",
       speed: 4
     };
-
-    // Цель
-    let target = {
-      x: canvas.width / 2 - 50,
-      y: canvas.height / 2 - 50,
-      size: 100,
-      color: "#009688"
-    };
+ let target = {
+  size: 100,
+  color: "#009688",
+  get x() { return canvas.width / 2 - this.size / 2; },
+  get y() { return canvas.height / 2 - this.size / 2; }
+};
 
     // Джойстик
     const joystick = {
-      base: { x: 60, y: 60 }, // Новый центр (половина 120)
-      maxRadius: 40,
+      base: { x: 115, y: 115 }, // центр джойстика (половина 150)
+      maxRadius: 50,
       currentX: 0,
       currentY: 0,
       moving: false
     };
+
+    // Функция для перевода координат джойстика в направление
+    function getDirectionFromJoystick() {
+      return {
+        x: joystick.currentX / joystick.maxRadius,
+        y: joystick.currentY / joystick.maxRadius
+      };
+    }
 
     // Перемещение джойстика
     function moveJoystick(x, y) {
@@ -130,11 +121,32 @@
         joystick.currentY = dy;
       }
 
-      thumb.style.left = 40 + joystick.currentX + "px";
-      thumb.style.top = 40 + joystick.currentY + "px";
+      thumb.style.left = 45 + joystick.currentX + "px";
+      thumb.style.top = 45 + joystick.currentY + "px";
     }
 
-    // Тач события
+    // События мыши
+    joystickArea.addEventListener("mousedown", (e) => {
+      joystick.moving = true;
+      moveJoystick(e.offsetX, e.offsetY);
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (joystick.moving) {
+        const rect = joystickArea.getBoundingClientRect();
+        moveJoystick(e.clientX - rect.left, e.clientY - rect.top);
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      joystick.moving = false;
+      joystick.currentX = 0;
+      joystick.currentY = 0;
+      thumb.style.left = "45px";
+      thumb.style.top = "45px";
+    });
+
+    // События тача
     joystickArea.addEventListener("touchstart", (e) => {
       e.preventDefault();
       const touch = e.touches[0];
@@ -154,30 +166,22 @@
       joystick.moving = false;
       joystick.currentX = 0;
       joystick.currentY = 0;
-      thumb.style.left = "40px";
-      thumb.style.top = "40px";
+      thumb.style.left = "45px";
+      thumb.style.top = "45px";
     });
 
-    // Получаем направление от джойстика
-    function getDirectionFromJoystick() {
-      return {
-        x: joystick.currentX / joystick.maxRadius,
-        y: joystick.currentY / joystick.maxRadius
-      };
-    }
-
-    // Обновляем позицию игрока
+    // Обновление позиции игрока
     function updatePlayerPosition() {
       const dir = getDirectionFromJoystick();
       player.x += dir.x * player.speed;
       player.y += dir.y * player.speed;
 
-      // Ограничения
+      // Ограничение движения по краям канваса
       player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
     }
 
-    // Проверка столкновения с целью
+    // Проверка столкновения
     function checkCollision() {
       let collides =
         player.x < target.x + target.size &&
@@ -196,7 +200,7 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Фон
+      // Травяной фон
       ctx.fillStyle = "#6aae6d";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
